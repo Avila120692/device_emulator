@@ -10,28 +10,39 @@ import java.util.stream.Collectors;
 
 public class Main {
 	// CSV headers
-	final static String[] record_headers = new String[]{
-		"E","B","C","D","F","G","E","E","E","E","E","E","E","E","E","E","E"};
+	private final static String[] record_headers = new String[]{
+		"mod_sn","group","test","value","date","sn","comment","modsn","Tbd","Tmod"};
+
+	// Data files
+	private final static String voltage_filename = "ifg_height.csv";
+	private final static String noise_filename = "noise.csv";
 
 	// Test endpoints
 	//final static String endpoint1 = "https://requestb.in/1fiesf61";
-	final static String endpoint3 = "https://n20bcm7mi0.execute-api.us-east-1.amazonaws.com/dev/molspec-hackathon-publish-device-data-record";
+	private final static String endpoint3 = "https://n20bcm7mi0.execute-api.us-east-1.amazonaws.com/dev/molspec-hackathon-publish-device-data-record";
 
 	// Logging
 	private final static Logger LOGGER = Logger.getLogger(Main.class.getName());
+	private static ClassLoader classloader;
 
-	public static void main(String[] args) throws InterruptedException, UnsupportedEncodingException {
+	public static void main(String[] args) throws UnsupportedEncodingException, InterruptedException {
 		LOGGER.setLevel(Level.INFO);
+		classloader = Main.class.getClassLoader();
 
+		// Voltage
+		while (true)
+			streamDataToEndpoint(voltage_filename);
+	}
+
+	public static void streamDataToEndpoint(String data_records_source) throws InterruptedException, UnsupportedEncodingException {
 		// Load csv file
-		ClassLoader classloader = Main.class.getClassLoader();
-		InputStream is = classloader.getResourceAsStream(("data.csv"));
+		InputStream is = classloader.getResourceAsStream((data_records_source));
 
 		// Map csv lines into dictionaries
 		List<HashMap> records = processFile(is);
 		for(HashMap record : records) {
 			// Make request
-			doPOST(endpoint3, record);
+			publishMessage(endpoint3, record);
 
 			// Wait
 			TimeUnit.SECONDS.sleep(5);
@@ -65,7 +76,7 @@ public class Main {
 		return record;
 	};
 
-	public static void doPOST(String request_url, HashMap record) throws UnsupportedEncodingException {
+	public static void publishMessage(String request_url, HashMap record) throws UnsupportedEncodingException {
 		String message = new Gson().toJson(record);
 		System.out.println();
 		LOGGER.info("JSON: " + message);
